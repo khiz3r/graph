@@ -40,7 +40,7 @@ jobs:
         run: |
           rm -rf demo-dist
           cp -R demo/ demo-dist/
-          cp dist/voyager.css dist/voyager.standalone.js demo-dist/
+          cp dist/voyager.css* dist/voyager.standalone.js* demo-dist/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
