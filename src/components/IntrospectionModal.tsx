@@ -53,57 +53,6 @@ export function IntrospectionModal(props: IntrospectionModalProps) {
   // Holds the already-parsed data when loaded via file upload, avoiding re-parse on submit
   const parsedDataRef = useRef<any>(null);
 
-  return (
-    <IntrospectionDialog
-      open={open}
-      onCancel={handleCancel}
-      onSubmit={handleSubmit}
-    >
-      <TabContext value={inputType}>
-        <TabList
-          variant="fullWidth"
-          indicatorColor="primary"
-          textColor="primary"
-          onChange={(_, activeTab) => setInputType(activeTab)}
-        >
-          {hasPresets && (
-            <Tab value={InputType.Presets} label={InputType.Presets} />
-          )}
-          <Tab value={InputType.SDL} label={InputType.SDL} />
-          <Tab
-            value={InputType.Introspection}
-            label={InputType.Introspection}
-          />
-        </TabList>
-        {hasPresets && (
-          <TabPanel value={InputType.Presets}>
-            <PresetsTab
-              presets={presets}
-              activePreset={activePreset}
-              onPresetChange={setActivePreset}
-            />
-          </TabPanel>
-        )}
-        <TabPanel value={InputType.SDL}>
-          <SDLTab sdlText={sdlText} onSDLTextChange={setSDLText} />
-        </TabPanel>
-        <TabPanel value={InputType.Introspection}>
-          <IntrospectionTab
-            jsonText={jsonText}
-            onJSONTextChange={(text) => {
-              setJSONText(text);
-              parsedDataRef.current = null;
-              setParseError(null);
-            }}
-            isParsing={isParsing}
-            parseError={parseError}
-            onFileLoad={handleFileLoad}
-          />
-        </TabPanel>
-      </TabContext>
-    </IntrospectionDialog>
-  );
-
   // Loads a file off the main thread using FileReader, then parses JSON in a
   // chunked setTimeout so the browser stays responsive on large (15MB+) files.
   const handleFileLoad = useCallback((file: File) => {
@@ -178,6 +127,57 @@ export function IntrospectionModal(props: IntrospectionModalProps) {
     parsedDataRef.current = null;
     onClose();
   }
+
+  return (
+    <IntrospectionDialog
+      open={open}
+      onCancel={handleCancel}
+      onSubmit={handleSubmit}
+    >
+      <TabContext value={inputType}>
+        <TabList
+          variant="fullWidth"
+          indicatorColor="primary"
+          textColor="primary"
+          onChange={(_, activeTab) => setInputType(activeTab)}
+        >
+          {hasPresets && (
+            <Tab value={InputType.Presets} label={InputType.Presets} />
+          )}
+          <Tab value={InputType.SDL} label={InputType.SDL} />
+          <Tab
+            value={InputType.Introspection}
+            label={InputType.Introspection}
+          />
+        </TabList>
+        {hasPresets && (
+          <TabPanel value={InputType.Presets}>
+            <PresetsTab
+              presets={presets}
+              activePreset={activePreset}
+              onPresetChange={setActivePreset}
+            />
+          </TabPanel>
+        )}
+        <TabPanel value={InputType.SDL}>
+          <SDLTab sdlText={sdlText} onSDLTextChange={setSDLText} />
+        </TabPanel>
+        <TabPanel value={InputType.Introspection}>
+          <IntrospectionTab
+            jsonText={jsonText}
+            onJSONTextChange={(text) => {
+              setJSONText(text);
+              parsedDataRef.current = null;
+              setParseError(null);
+            }}
+            isParsing={isParsing}
+            parseError={parseError}
+            onFileLoad={handleFileLoad}
+          />
+        </TabPanel>
+      </TabContext>
+    </IntrospectionDialog>
+  );
 }
 
 interface IntrospectionDialogProps {
