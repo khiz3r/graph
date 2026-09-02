@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    <title>GraphQL Voyager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphql-voyager@2.0.0/dist/voyager.css" />
+    <style>
+      body { margin: 0; padding: 0; }
+      #voyager { height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <div id="voyager"></div>
+    <script src="https://cdn.jsdelivr.net/npm/graphql-voyager@2.0.0/dist/voyager.standalone.js"></script>
+    <script>
+      const { renderVoyager } = GraphQLVoyager;
+      renderVoyager(document.getElementById('voyager'), {
+        introspection: null,
+        allowToChangeSchema: true,
+      });
+    </script>
+  </body>
+</html>
