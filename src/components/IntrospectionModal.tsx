@@ -116,7 +116,33 @@ export function IntrospectionModal(props: IntrospectionModalProps) {
         }
         // Support both { data: { __schema } } and bare { __schema } shapes
         const schemaData = data?.data ?? data;
-        onChange(buildClientSchema(schemaData));
+        try {
+          onChange(buildClientSchema(schemaData));
+        } catch (err) {
+          // "Decorated type deeper than introspection query" — schema has types
+          // with more than 3 levels of list/non-null nesting. Strip them and retry.
+          if (
+            err instanceof Error &&
+            err.message.includes('Decorated type deeper than introspection query')
+          ) {
+            try {
+              const sanitized = sanitizeDeepTypes(schemaData);
+              onChange(buildClientSchema(sanitized));
+            } catch (err2) {
+              setParseError(
+                'Schema has unsupported deeply-nested types and could not be sanitized: ' +
+                  (err2 instanceof Error ? err2.message : String(err2)),
+              );
+              return;
+            }
+          } else {
+            setParseError(
+              'Failed to build schema: ' +
+                (err instanceof Error ? err.message : String(err)),
+            );
+            return;
+          }
+        }
         break;
       }
       case InputType.SDL:
@@ -126,6 +152,46 @@ export function IntrospectionModal(props: IntrospectionModalProps) {
     setSubmitted({ inputType, sdlText, jsonText, activePreset });
     parsedDataRef.current = null;
     onClose();
+  }
+
+  // Fixes two classes of broken ofType chains that cause buildClientSchema to crash:
+  // 1. Truncated chains — the introspection query cut off before reaching a named
+  //    type, leaving a LIST/NON_NULL node with no ofType key at all.
+  // 2. Chains deeper than 7 levels — beyond what buildClientSchema supports.
+  // Both are replaced with a plain String scalar so the rest of the schema loads.
+  function sanitizeDeepTypes(schemaData: any): any {
+    const MAX_DEPTH = 7;
+
+    function fixType(t: any, depth: number = 0): any {
+      if (!t) return null;
+
+      // Truncated: LIST or NON_NULL with no ofType key — terminate the chain
+      if ((t.kind === 'LIST' || t.kind === 'NON_NULL') && !('ofType' in t)) {
+        return { kind: 'SCALAR', name: 'String', ofType: null };
+      }
+
+      // Too deep — replace entirely
+      if (depth >= MAX_DEPTH) {
+        return { kind: 'SCALAR', name: 'String', ofType: null };
+      }
+
+      return { ...t, ofType: fixType(t.ofType, depth + 1) };
+    }
+
+    function sanitizeField(field: any): any {
+      return { ...field, type: fixType(field.type) };
+    }
+
+    const types = (schemaData.__schema?.types ?? []).map((type: any) => ({
+      ...type,
+      fields: type.fields?.map(sanitizeField) ?? type.fields,
+      inputFields: type.inputFields?.map(sanitizeField) ?? type.inputFields,
+    }));
+
+    return {
+      ...schemaData,
+      __schema: { ...schemaData.__schema, types },
+    };
   }
 
   return (
